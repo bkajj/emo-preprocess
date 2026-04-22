@@ -71,12 +71,30 @@ def process_deap():
         print(f'Loading DEAP subject: {s}', flush=True)
         deap, deap_ann = load_deap(s)
         result = preprocess_deap(data=deap, annotations=deap_ann, subject_id=s)
-        
-def run_pipeline():
-    process_biraffe()
-    process_case()
-    process_deap()
-    
+
+def process_dataset(dataset_name):
+    con = {}
+    if dataset_name == 'biraffe':
+        fileformat = '.csv'
+        splitchar = '-'
+    if dataset_name == 'case':
+        fileformat = '.csv'
+        splitchar = '.'
+    elif dataset_name == 'deap':
+        fileformat = '.dat'
+        splitchar = '.'
+    else:
+        return None
+
+    filenames = [f for f in os.listdir(BIRAFFE_PATH) if f.endswith(fileformat)]
+    subjects = [f.split(splitchar)[0] for f in filenames]
+
+    for s in subjects:
+        print(f'Loading DEAP subject: {s}', flush=True)
+        deap, deap_ann = load_deap(s)
+        result = preprocess_deap(data=deap, annotations=deap_ann, subject_id=s)
+
+
 def merge_subjects_to_csv(dataset_name):
     dir = os.path.join(EXTRACTED_PATH, dataset_name)
     files = [os.path.join(dir, f) for f in os.listdir(dir)]
@@ -85,6 +103,11 @@ def merge_subjects_to_csv(dataset_name):
     result = pd.concat(dfs, ignore_index=True)
     final_filename = os.path.join(EXTRACTED_PATH, f'{dataset_name}.csv')
     result.to_csv(final_filename)
+        
+def run_pipeline():
+    process_biraffe()
+    process_case()
+    process_deap()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
