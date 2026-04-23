@@ -18,13 +18,14 @@ def measure_model(model, y_test, pred):
     
     return pd.DataFrame([results])
 
-def benchmark_models(dfs):
-    for d in dfs:
+def benchmark_datasets(processed):
+    results = []
+    for name, df in processed.items():
         df = df.fillna(0)
         df = df.drop(columns=['video_id', 'Unnamed: 0'], errors='ignore')
         
         X = df.drop(columns=['AROUSAL', 'VALENCE'])
-        y = df[['AROUSAL', 'VALENCE']]
+        y = df[['VALENCE', 'AROUSAL']]
         
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
         
@@ -37,18 +38,6 @@ def benchmark_models(dfs):
         model.fit(X_train, y_train)
         pred = model.predict(X_test)
         results.append(measure_model(name, y_test, pred))
-
-results = []
-for name in dataset_names:
-    filename = os.path.join(EXTRACTED_PATH, f'{name}.csv')
-    df = pd.read_csv(filename)
-    
-    if name == 'deap':
-        df = df.rename(columns={'valence':'VALENCE', 'arousal':'AROUSAL'})
-    
-    # musze zrobic funkcje ktora bedzie przyjmowala dane i je benchmarkowala na probce
-    # bo jesli chce sprawdzic czy moj model dziala to nie bede za kazdym razem 25gb procesowal
-    # tylko po 1 sub dla kazdego, wtedy sprawdzic model i jesli jest ok to dla calosci
-
-print(pd.concat(results,ignore_index=True))
-    
+        
+    results = pd.concat(results, ignore_index=True)
+    return results

@@ -14,15 +14,25 @@ class Dataset:
     data_offset: int = 0
     signals: list = ['ECG', 'EDA']
 
-    def preprocess_all(self):
-        filenames = [f for f in os.listdir(self.path) if f.endswith(self.fileformat)]
+    def run(self, sample_size=None):
+        filenames = sorted(f for f in os.listdir(self.path) if f.endswith(self.fileformat))
         subjects = [f.split(self.splitchar)[0] for f in filenames]
 
+        if sample_size is not None:
+            subjects = subjects[:sample_size]
+
+        results = []
         for s in subjects:
             print(f'Loading {self.name} subject: {s}', flush=True)
             data, annotations = self.load_subject(s)
-            result = self.preprocess(data, annotations, subject_id=s, window_time=5)
+            results.append(self.process_subject(data, annotations, subject_id=s, window_time=5))
+        results = pd.concat(results, ignore_index=True)
 
+        if sample_size is None:
+            self.merge_subjects_to_csv()
+            
+        return results
+    
     def load_subject(self, subject_id):
         pass
 
@@ -42,7 +52,7 @@ class Dataset:
     def post_process(self, features, annotations):
         return features
 
-    def preprocess(self, data, annotations, subject_id, window_time):
+    def process_subject(self, data, annotations, subject_id, window_time):
         window_size = window_time * self.sampling_rate
 
         data = self.merge_with_annotations(data, annotations)
@@ -69,6 +79,15 @@ class Dataset:
     def merge_with_annotations(self, sig, ann):
         return sig
     
+    def merge_subjects_to_csv(self):
+        dir = os.path.join(EXTRACTED_PATH, self.name)
+        files = [os.path.join(dir, f) for f in os.listdir(dir)]
+        dfs = [pd.read_csv(f) for f in files]
+        
+        result = pd.concat(dfs, ignore_index=True)
+        final_filename = os.path.join(EXTRACTED_PATH, f'{self.name}.csv')
+        result.to_csv(final_filename)
+    
 
 
 
@@ -77,7 +96,7 @@ class Biraffe(Dataset):
     path = os.path.join(BASE_DIR, 'BIRAFFE2', 'biosigs', 'BIRAFFE2-biosigs')
     annotations_path = os.path.join(BASE_DIR, 'BIRAFFE2', 'procedure', 'BIRAFFE2-procedure')
     sampling_rate = 1000
-        
+
     def load_subject(self, sub_id):
         biosigs = pd.read_csv(os.path.join(self.path, f'{sub_id}-BioSigs.csv'), sep=',')
         annotations = pd.read_csv(os.path.join(self.annotations_path, f'{sub_id}-Procedure.csv'), sep=';')
@@ -116,7 +135,8 @@ class Case(Dataset):
     annotations_path = os.path.join(BASE_DIR, 'CASE', 'data', 'interpolated', 'annotations')
     sampling_rate = 1000
     splitchar = '.'
-                
+    
+
     def load_subject(self, sub_id):
         biosigs = pd.read_csv(os.path.join(self.path, f'{sub_id}.csv'), sep=',')
         biosigs = biosigs[['daqtime', 'ecg', 'gsr', 'video']].rename(columns={'gsr': 'EDA', 'ecg': 'ECG', 'daqtime':'TIMESTAMP', 'video':'VIDEO_ID'})
@@ -148,6 +168,7 @@ class Deap(Dataset):
             deap = pickle.load(f, encoding='latin1')
 
         annotations = pd.DataFrame(deap['labels'][:, :2], columns=['valence', 'arousal'])
+        annotations = annotations.rename(columns={'valence': 'VALENCE', 'arousal': 'AROUSAL'})
         annotations['video_id'] = range(40)
         
         dfs = []
