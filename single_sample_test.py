@@ -1,4 +1,4 @@
-from dataset import *
+from emo_datasets import *
 from benchmark import benchmark_datasets
 datasets = [Biraffe(), Case(), Deap()]
 
