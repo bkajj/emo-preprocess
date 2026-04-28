@@ -17,7 +17,7 @@ else:
 from emo_datasets import *
 import warnings;
 from config import *
-from multiprocessing import Process
+from concurrent.futures import ProcessPoolExecutor
 warnings.filterwarnings('ignore')
 
 datasets = {
@@ -28,7 +28,7 @@ datasets = {
 
 def run_dataset(name, sample_size=None):
     dataset = datasets[name]()
-    dataset.run(sample_size)
+    return dataset.run(sample_size)
 
 if __name__ == '__main__':
     if not any([args.biraffe, args.case, args.deap]):
@@ -38,15 +38,16 @@ if __name__ == '__main__':
 
     processes = []
 
-    if args.biraffe:
-        processes.append(Process(target=run_dataset, args=('biraffe', args.samples)))
-    if args.case:
-        processes.append(Process(target=run_dataset, args=('case', args.samples)))
-    if args.deap:
-        processes.append(Process(target=run_dataset, args=('deap', args.samples)))
-        
-    for p in processes:
-        p.start()
-        
-    for p in processes:
-        p.join()
+    with ProcessPoolExecutor(max_workers=3) as executor:
+        futures = {
+            executor.submit(run_dataset, name, args.samples): name for name in datasets.keys()
+        }
+
+    results = {}
+    for future in futures:
+        name = futures[future]
+        results[name] = future.result()
+
+    print(results)
+
+    
