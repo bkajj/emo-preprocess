@@ -1,7 +1,22 @@
+import argparse
+import os 
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-b', '--biraffe', action='store_true')
+parser.add_argument('-c', '--case', action='store_true')
+parser.add_argument('-d', '--deap', action='store_true')
+parser.add_argument('-s', '--samples', type=int, default=None)
+parser.add_argument('--no-cache', action='store_true') # don't use when processing data for all subjects
+args = parser.parse_args()
+
+if args.no_cache:
+    os.environ['USE_DATASET_MEMORY'] = '0'
+else:
+    os.environ['USE_DATASET_MEMORY'] = '1'
+
 from emo_datasets import *
 import warnings;
 from config import *
-import argparse
 from multiprocessing import Process
 warnings.filterwarnings('ignore')
 
@@ -16,13 +31,6 @@ def run_dataset(name, sample_size=None):
     dataset.run(sample_size)
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-b', '--biraffe', action='store_true')
-    parser.add_argument('-c', '--case', action='store_true')
-    parser.add_argument('-d', '--deap', action='store_true')
-    parser.add_argument('-s', '--samples', type=int, default=None)
-    args = parser.parse_args()
-
     if not any([args.biraffe, args.case, args.deap]):
         args.biraffe = True
         args.case = True

@@ -1,8 +1,27 @@
 from .dataset import Dataset
-from config import BASE_DIR
+from config import BASE_DIR, raw_dataset_memory
 import os
 import pandas as pd
 import pickle
+
+@raw_dataset_memory.cache
+def _load_deap_subject(sub_id, path):
+    with open(os.path.join(path, f'{sub_id}.dat'), 'rb') as f:
+        deap = pickle.load(f, encoding='latin1')
+
+    annotations = pd.DataFrame(deap['labels'][:, :2], columns=['valence', 'arousal'])
+    annotations = annotations.rename(columns={'valence': 'VALENCE', 'arousal': 'AROUSAL'})
+    annotations['video_id'] = range(40)
+    
+    dfs = []
+    deap_data = deap['data'][:, [36, 38], :]
+    for i, video in enumerate(deap_data):
+        df = pd.DataFrame(video.T, columns=['EDA', 'BVP'])
+        df['video_id'] = i
+        dfs.append(df)
+
+    deap = pd.concat(dfs, ignore_index=True)
+    return deap, annotations
 
 class Deap(Dataset):
     name = 'DEAP'
@@ -15,22 +34,7 @@ class Deap(Dataset):
     signals = ['BVP', 'EDA']
                 
     def load_subject(self, sub_id):
-        with open(os.path.join(self.path, f'{sub_id}.dat'), 'rb') as f:
-            deap = pickle.load(f, encoding='latin1')
-
-        annotations = pd.DataFrame(deap['labels'][:, :2], columns=['valence', 'arousal'])
-        annotations = annotations.rename(columns={'valence': 'VALENCE', 'arousal': 'AROUSAL'})
-        annotations['video_id'] = range(40)
-        
-        dfs = []
-        deap_data = deap['data'][:, [36, 38], :]
-        for i, video in enumerate(deap_data):
-            df = pd.DataFrame(video.T, columns=['EDA', 'BVP'])
-            df['video_id'] = i
-            dfs.append(df)
-
-        deap = pd.concat(dfs, ignore_index=True)
-        return deap, annotations
+        return _load_deap_subject(sub_id, self.path)
     
     def add_labels(self, combined, data, i, window_size, segment_id):
         combined['video_id'] = segment_id
@@ -44,3 +48,4 @@ class Deap(Dataset):
     
     def merge_with_annotations(self, sig, ann):
         return sig
+    

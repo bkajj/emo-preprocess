@@ -32,7 +32,7 @@ class Dataset:
             
         return results
     
-    def load_subject(self, subject_id):
+    def load_subject(self, subject_id, cache=False):
         pass
 
     def extract_features(self, data, i, window_size):

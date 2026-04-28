@@ -1,7 +1,14 @@
 from .dataset import Dataset
-from config import BASE_DIR
+from config import BASE_DIR, raw_dataset_memory
 import os
 import pandas as pd
+
+@raw_dataset_memory.cache
+def _load_biraffe_subject(sub_id, path, annotations_path):
+    biosigs = pd.read_csv(os.path.join(path, f'{sub_id}-BioSigs.csv'), sep=',')
+    annotations = pd.read_csv(os.path.join(annotations_path, f'{sub_id}-Procedure.csv'), sep=';')
+    annotations = annotations.rename(columns={'ANS-VALENCE':'VALENCE', 'ANS-AROUSAL':'AROUSAL'})
+    return biosigs, annotations
 
 class Biraffe(Dataset):
     name = 'BIRAFFE'
@@ -10,10 +17,7 @@ class Biraffe(Dataset):
     sampling_rate = 1000
 
     def load_subject(self, sub_id):
-        biosigs = pd.read_csv(os.path.join(self.path, f'{sub_id}-BioSigs.csv'), sep=',')
-        annotations = pd.read_csv(os.path.join(self.annotations_path, f'{sub_id}-Procedure.csv'), sep=';')
-        annotations = annotations.rename(columns={'ANS-VALENCE':'VALENCE', 'ANS-AROUSAL':'AROUSAL'})
-        return biosigs, annotations
+        return _load_biraffe_subject(sub_id, self.path, self.annotations_path)
     
     def merge_with_annotations(self, sig, ann):
         parts = [1, 2]
