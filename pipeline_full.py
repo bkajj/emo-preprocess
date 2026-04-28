@@ -18,6 +18,7 @@ from emo_datasets import *
 import warnings;
 from config import *
 from concurrent.futures import ProcessPoolExecutor
+from benchmark import benchmark_datasets
 warnings.filterwarnings('ignore')
 
 datasets = {
@@ -48,6 +49,7 @@ if __name__ == '__main__':
         name = futures[future]
         results[name] = future.result()
 
-    print(results)
+    benchmark_results = benchmark_datasets(results)
+    print(benchmark_results)
 
     
