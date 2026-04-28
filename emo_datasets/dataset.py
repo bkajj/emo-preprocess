@@ -24,7 +24,8 @@ class Dataset:
         for s in subjects:
             print(f'Loading {self.name} subject: {s}', flush=True)
             data, annotations = self.load_subject(s)
-            results.append(self.process_subject(data, annotations, subject_id=s, window_time=5))
+            processed = self.process_subject(data, annotations, subject_id=s, window_time=5)
+            results.append(processed)
         results = pd.concat(results, ignore_index=True)
 
         if sample_size is None:
@@ -72,6 +73,7 @@ class Dataset:
         
         final = pd.concat(results, ignore_index=True)
         final = self.post_process(final, annotations)
+        final['SUBJECT_ID'] = subject_id
         final.to_csv(output_filename, index=False)
         return final
     
@@ -85,4 +87,4 @@ class Dataset:
         
         result = pd.concat(dfs, ignore_index=True)
         final_filename = os.path.join(EXTRACTED_PATH, f'{self.name}.csv')
-        result.to_csv(final_filename)
+        result.to_csv(final_filename, index=False)
