@@ -1,5 +1,6 @@
 import argparse
 import os 
+import pandas as pd 
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-b', '--biraffe', action='store_true')
@@ -45,11 +46,17 @@ if __name__ == '__main__':
         }
 
     results = {}
+    errors = {}
     for future in futures:
         name = futures[future]
-        results[name] = future.result()
+        results[name], errors[name] = future.result()
 
     benchmark_results = benchmark_datasets(results)
     print(benchmark_results)
+
+    errors_merged = pd.concat(errors.values(), ignore_index=True)
+    errors_merged.to_csv(os.path.join(EXTRACTED_PATH, 'errors.csv'), index=False)
+
+    #TODO: handle errors, probaby merge all to one file 
 
     

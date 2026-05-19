@@ -5,6 +5,12 @@ import warnings;
 warnings.filterwarnings('ignore')
 from config import *
 
+SIGNAL_FEATURES = {
+    'ECG': ['ECG_Rate_Mean', 'HRV_MeanNN', 'HRV_SDNN', 'HRV_RMSSD'],
+    'EDA': ['SCR_Peaks_N', 'SCR_Peaks_Amplitude_Mean', 'EDA_Tonic_SD'],
+    'BVP': ['PPG_Rate_Mean', 'HRV_MeanNN', 'HRV_SDNN', 'HRV_RMSSD'],
+}
+
 @features_memory.cache
 def extract_bvp_fragment(bvp, sampling_rate):
     bvp, info = nk.ppg_process(bvp, sampling_rate=sampling_rate)
