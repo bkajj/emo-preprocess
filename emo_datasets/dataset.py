@@ -79,7 +79,7 @@ class Dataset:
         results_errors = []
         for segment_id, segment in self.get_segments(data):
             segment = segment.reset_index(drop=True) 
-            for i in range(self.data_offset, len(segment) - window_size, window_size):
+            for i in range(self.data_offset, len(segment) - window_size + 1, window_size):
                 extracted, errors = self.extract_features(segment, i, window_size)
 
                 for sig_name, e in errors:
