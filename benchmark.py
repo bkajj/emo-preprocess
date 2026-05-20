@@ -1,7 +1,11 @@
 from config import *
 import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.model_selection import GroupKFold, cross_validate
+from sklearn.model_selection import GroupKFold, cross_validate, cross_val_predict
+from sklearn.metrics import r2_score, mean_absolute_error
+
+pd.set_option('display.max_columns', None)
+pd.set_option('display.width', 200)
 
 def get_cv(df):
     n_subjects = df['SUBJECT_ID'].nunique()
@@ -97,6 +101,12 @@ def benchmark_datasets(processed):
             return_train_score=True
             )
         
+        preds =  cross_val_predict(model, X, y, groups=groups, cv=get_cv(df))
+        r2_global_v = r2_score(y['VALENCE'], preds[:, 0])
+        r2_global_a = r2_score(y['AROUSAL'], preds[:, 1])
+        mae_global_v = mean_absolute_error(y['VALENCE'], preds[:, 0])
+        mae_global_a = mean_absolute_error(y['AROUSAL'], preds[:, 1])
+
         final_results.append({
             'dataset': name,
             'r2_mean': results['test_r2'].mean(),
@@ -104,6 +114,10 @@ def benchmark_datasets(processed):
             'mse_mean': -results['test_neg_mean_squared_error'].mean(),
             'mae_mean': -results['test_neg_mean_absolute_error'].mean(),
             'train_r2_mean': results['train_r2'].mean(),
+            'r2_global_v': r2_global_v,
+            'r2_global_a': r2_global_a,
+            'mae_global_v': mae_global_v,
+            'mae_global_a': mae_global_a,
         })
         
     return pd.DataFrame(final_results)
