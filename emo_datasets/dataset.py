@@ -4,6 +4,8 @@ import os
 import pandas as pd
 import numpy as np
 
+ERROR_COLUMNS = ['dataset', 'subject_id', 'segment_id', 'window_start', 'signal', 'error_type', 'error_msg']
+
 class Dataset:
     name: str
     path: str
@@ -14,7 +16,7 @@ class Dataset:
     data_offset: int = 0
     signals: list = ['ECG', 'EDA']
 
-    def run(self, sample_size=None):
+    def run(self, sample_size=None, thread_num=0, max_threads=1):
         filenames = sorted(f for f in os.listdir(self.path) if f.endswith(self.fileformat))
         subjects = [f.split(self.splitchar)[0] for f in filenames]
 
@@ -23,18 +25,17 @@ class Dataset:
 
         results = []
         errors = []
-        for s in subjects:
-            print(f'Loading {self.name} subject: {s}', flush=True)
+
+        subjects_for_thread = subjects[thread_num::max_threads]
+        for s in subjects_for_thread:
+            print(f'[{self.name} t{thread_num}/{max_threads}] Loading subject: {s}', flush=True)
             data, annotations = self.load_subject(s)
             processed, subject_error = self.process_subject(data, annotations, subject_id=s, window_time=6)
             results.append(processed)
             errors.append(subject_error)
 
-        results = pd.concat(results, ignore_index=True)
-        errors = pd.concat(errors, ignore_index=True)
-
-        if sample_size is None:
-            self.merge_subjects_to_csv()
+        results = pd.concat(results, ignore_index=True) if results else pd.DataFrame()
+        errors = pd.concat(errors, ignore_index=True) if errors else pd.DataFrame(columns=ERROR_COLUMNS)
             
         return results, errors
     
