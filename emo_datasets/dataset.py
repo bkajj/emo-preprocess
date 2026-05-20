@@ -29,10 +29,14 @@ class Dataset:
         subjects_for_thread = subjects[thread_num::max_threads]
         for s in subjects_for_thread:
             print(f'[{self.name} t{thread_num}/{max_threads}] Loading subject: {s}', flush=True)
-            data, annotations = self.load_subject(s)
-            processed, subject_error = self.process_subject(data, annotations, subject_id=s, window_time=6)
-            results.append(processed)
-            errors.append(subject_error)
+            try:
+                data, annotations = self.load_subject(s)
+                processed, subject_error = self.process_subject(data, annotations, subject_id=s, window_time=6)
+                results.append(processed)
+                errors.append(subject_error)
+            except Exception as e:
+                print(f'[{self.name}] FAILED subject {s}: {type(e).__name__}: {e}', flush=True)
+                continue
 
         results = pd.concat(results, ignore_index=True) if results else pd.DataFrame()
         errors = pd.concat(errors, ignore_index=True) if errors else pd.DataFrame(columns=ERROR_COLUMNS)
@@ -70,7 +74,6 @@ class Dataset:
 
     def process_subject(self, data, annotations, subject_id, window_time):
         window_size = window_time * self.sampling_rate
-        skipped_windows = []
 
         data = self.merge_with_annotations(data, annotations)
         output_filename = os.path.join(EXTRACTED_PATH, self.name, f'{subject_id}.csv')
@@ -96,13 +99,12 @@ class Dataset:
                         }
                         results_errors.append(window_data)
                     
-
                 if extracted is not None:
                     combined = pd.concat(extracted, axis=1)
                     combined = self.add_labels(combined, segment, i, window_size, segment_id)
                     results.append(combined)
 
-        final = pd.concat(results, ignore_index=True)
+        final = pd.concat(results, ignore_index=True) if results else pd.DataFrame()
         final = self.post_process(final, annotations)
         final['SUBJECT_ID'] = subject_id
         results_errors = pd.DataFrame(results_errors)
@@ -116,7 +118,11 @@ class Dataset:
     
     def merge_subjects_to_csv(self):
         dir = os.path.join(EXTRACTED_PATH, self.name)
-        files = [os.path.join(dir, f) for f in os.listdir(dir)]
+        files = [
+            os.path.join(dir, f) 
+            for f in os.listdir(dir) 
+            if not f.endswith('_errors.csv')
+        ]
         dfs = [pd.read_csv(f) for f in files]
         
         result = pd.concat(dfs, ignore_index=True)

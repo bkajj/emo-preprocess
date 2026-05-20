@@ -6,7 +6,7 @@ import pandas as pd
 @raw_dataset_memory.cache
 def _load_biraffe_subject(sub_id, path, annotations_path):
     biosigs = pd.read_csv(os.path.join(path, f'{sub_id}-BioSigs.csv'), sep=',')
-    annotations = pd.read_csv(os.path.join(annotations_path, f'{sub_id}-Procedure.csv'), sep=';')
+    annotations = pd.read_csv(os.path.join(annotations_path, f'{sub_id}-Procedure.csv'), sep=';', na_values=['None'])
     annotations = annotations.rename(columns={'ANS-VALENCE':'VALENCE', 'ANS-AROUSAL':'AROUSAL'})
     return biosigs, annotations
 
@@ -35,7 +35,7 @@ class Biraffe(Dataset):
             ts_end = ann.loc[ann_end_idx]['TIMESTAMP']
             
             ann_part = ann[(ann['TIMESTAMP'] >= ts_start) & (ann['TIMESTAMP'] < ts_end)]
-            stimuli = ann_part[ann_part['EVENT'].isna()]
+            stimuli = ann_part[ann_part['EVENT'].isna() & ann_part['ANS-TIME'].notna()]
             for _, a in stimuli.iterrows():
                 start = a['TIMESTAMP']
                 end = a['TIMESTAMP'] + 6
@@ -46,5 +46,10 @@ class Biraffe(Dataset):
                 sigs.append(sig_fragment)
                 stimuli_id += 1
 
-        sig = pd.concat(sigs, ignore_index=True)
+        if sigs:
+            sig = pd.concat(sigs, ignore_index=True)
+        else:
+            sig = pd.DataFrame(columns=sig.columns.tolist() + ['STIMULI_ID', 'VALENCE', 'AROUSAL'])
+
+            
         return sig
