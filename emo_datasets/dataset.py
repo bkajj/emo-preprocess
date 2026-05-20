@@ -26,7 +26,7 @@ class Dataset:
         for s in subjects:
             print(f'Loading {self.name} subject: {s}', flush=True)
             data, annotations = self.load_subject(s)
-            processed, subject_error = self.process_subject(data, annotations, subject_id=s, window_time=5)
+            processed, subject_error = self.process_subject(data, annotations, subject_id=s, window_time=6)
             results.append(processed)
             errors.append(subject_error)
 

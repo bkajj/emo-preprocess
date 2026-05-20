@@ -25,7 +25,7 @@ class Biraffe(Dataset):
     def merge_with_annotations(self, sig, ann):
         parts = [1, 2]
         sigs = []
-        anns = []
+        stimuli_id = 0
         for p in parts:
             start_str = f'STIMULI PART {p} START'
             end_str = f'STIMULI PART {p} END'
@@ -35,14 +35,16 @@ class Biraffe(Dataset):
             ts_end = ann.loc[ann_end_idx]['TIMESTAMP']
             
             ann_part = ann[(ann['TIMESTAMP'] >= ts_start) & (ann['TIMESTAMP'] < ts_end)]
-            sig_part = sig[(sig['TIMESTAMP'] >= ts_start) & (sig['TIMESTAMP'] < ts_end)]
-            sig_part['STIMULI_ID'] = p
-            anns.append(ann_part)
-            sigs.append(sig_part)
-            
-        sig = pd.concat(sigs)
-        ann = pd.concat(anns)
-        ann = ann[['TIMESTAMP', 'VALENCE', 'AROUSAL']]
-        
-        result = pd.merge_asof(sig, ann, on='TIMESTAMP')
-        return result
+            stimuli = ann_part[ann_part['EVENT'].isna()]
+            for _, a in stimuli.iterrows():
+                start = a['TIMESTAMP']
+                end = a['TIMESTAMP'] + 6
+                sig_fragment = sig[(sig['TIMESTAMP'] >= start) & (sig['TIMESTAMP'] < end)].copy()
+                sig_fragment['STIMULI_ID'] = stimuli_id
+                sig_fragment['VALENCE'] = a['VALENCE']
+                sig_fragment['AROUSAL'] = a['AROUSAL']
+                sigs.append(sig_fragment)
+                stimuli_id += 1
+
+        sig = pd.concat(sigs, ignore_index=True)
+        return sig
