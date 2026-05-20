@@ -62,7 +62,7 @@ class Dataset:
         return combined
     
     def get_segments(self, data):
-        return [(None, data)] # workaround for now
+        pass
     
     def post_process(self, features, annotations):
         return features

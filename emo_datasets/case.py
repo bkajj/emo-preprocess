@@ -22,6 +22,9 @@ class Case(Dataset):
     def load_subject(self, sub_id):
         return _load_case_subject(sub_id, self.path, self.annotations_path)
     
+    def get_segments(self, data):
+        return data.groupby('VIDEO_ID')
+    
     def merge_with_annotations(self, sig, ann):
         sig = sig[sig['VIDEO_ID'].isin(range(1, 9))].copy().sort_values('TIMESTAMP')
         ann = ann[ann['VIDEO_ID'].isin(range(1, 9))].copy().sort_values('TIMESTAMP')

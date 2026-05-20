@@ -19,6 +19,9 @@ class Biraffe(Dataset):
     def load_subject(self, sub_id):
         return _load_biraffe_subject(sub_id, self.path, self.annotations_path)
     
+    def get_segments(self, data):
+        return data.groupby('STIMULI_ID')
+    
     def merge_with_annotations(self, sig, ann):
         parts = [1, 2]
         sigs = []
@@ -33,6 +36,7 @@ class Biraffe(Dataset):
             
             ann_part = ann[(ann['TIMESTAMP'] >= ts_start) & (ann['TIMESTAMP'] < ts_end)]
             sig_part = sig[(sig['TIMESTAMP'] >= ts_start) & (sig['TIMESTAMP'] < ts_end)]
+            sig_part['STIMULI_ID'] = p
             anns.append(ann_part)
             sigs.append(sig_part)
             
