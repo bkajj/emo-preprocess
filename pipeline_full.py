@@ -34,6 +34,12 @@ from concurrent.futures import ProcessPoolExecutor
 from benchmark import benchmark_datasets
 warnings.filterwarnings('ignore')
 
+window_times = {
+    'biraffe': 6,
+    'case': 5,
+    'deap': 5
+}
+
 datasets = {
     'biraffe': Biraffe,
     'case': Case,
@@ -42,7 +48,7 @@ datasets = {
 
 def run_dataset(name, sample_size=None, thread_num=0, max_threads=1):
     dataset = datasets[name]()
-    return dataset.run(sample_size, thread_num, max_threads)
+    return dataset.run(sample_size, thread_num, max_threads, window_times[name])
 
 if __name__ == '__main__':
     jobs = []
@@ -80,6 +86,7 @@ if __name__ == '__main__':
 
     benchmark_results = benchmark_datasets(results)
     print(benchmark_results)
+    benchmark_results.to_csv(os.path.join(EXTRACTED_PATH, 'results.csv'), index=False)
 
     errors_merged = pd.concat(errors.values(), ignore_index=True)
     errors_merged.to_csv(os.path.join(EXTRACTED_PATH, 'errors.csv'), index=False)

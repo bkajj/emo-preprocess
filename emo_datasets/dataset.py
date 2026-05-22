@@ -16,7 +16,7 @@ class Dataset:
     data_offset: int = 0
     signals: list = ['ECG', 'EDA']
 
-    def run(self, sample_size=None, thread_num=0, max_threads=1):
+    def run(self, sample_size=None, thread_num=0, max_threads=1, window_time=6):
         filenames = sorted(f for f in os.listdir(self.path) if f.endswith(self.fileformat))
         subjects = [f.split(self.splitchar)[0] for f in filenames]
 
@@ -31,7 +31,7 @@ class Dataset:
             print(f'[{self.name} t{thread_num}/{max_threads}] Loading subject: {s}', flush=True)
             try:
                 data, annotations = self.load_subject(s)
-                processed, subject_error = self.process_subject(data, annotations, subject_id=s, window_time=6)
+                processed, subject_error = self.process_subject(data, annotations, subject_id=s, window_time=window_time)
                 results.append(processed)
                 errors.append(subject_error)
             except Exception as e:
