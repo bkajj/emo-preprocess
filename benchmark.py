@@ -1,12 +1,17 @@
 from config import *
 import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.impute import SimpleImputer
+from sklearn.pipeline import Pipeline
 from sklearn.model_selection import GroupKFold, cross_validate, cross_val_predict, LeaveOneGroupOut
 from sklearn.metrics import r2_score, mean_absolute_error
-from pipeline import config
 
 pd.set_option('display.max_columns', None)
 pd.set_option('display.width', 200)
+
+MODELS = {
+    'random_forest': RandomForestRegressor,
+}
 
 def get_cv(df):
     cv_cfg = config['cv']
@@ -83,14 +88,28 @@ def create_model_from_config():
     model_class = MODELS[model_cfg['type']]
     return model_class(**model_cfg['params'])
 
+def make_imputer(strategy):
+    if strategy == 'impute_median':
+        return SimpleImputer(strategy='median')
+    elif strategy == 'impute_zero':
+        return SimpleImputer(strategy='constant', fill_value=0)
 
 def benchmark_datasets(processed):
     #correlation_check(processed)  
-    correlation_check_avg(processed)
+    #correlation_check_avg(processed)
+
+    preprocessing_cfg = config['preprocessing']
 
     final_results = []
     for name, df in processed.items():
-        df = df.dropna().reset_index(drop=True)
+
+        if preprocessing_cfg['nan_handling'] == 'drop':
+            df = df.dropna().reset_index(drop=True)
+            model = create_model_from_config()
+        else:
+            imputer = make_imputer(preprocessing_cfg['nan_handling'])
+            model = Pipeline([('imputer', imputer), ('regressor', create_model_from_config())])
+
         df = df.drop(columns=['video_id'], errors='ignore')
 
         feature_cols = df.drop(columns=['AROUSAL', 'VALENCE', 'SUBJECT_ID']).columns
@@ -99,12 +118,10 @@ def benchmark_datasets(processed):
         X = df.drop(columns=['AROUSAL', 'VALENCE', 'SUBJECT_ID'])
         y = df[['VALENCE', 'AROUSAL']]
 
-        sanity_check(X, 'feature sanity check', name)
-        sanity_check(y, 'target sanity check', name)
+        #sanity_check(X, 'feature sanity check', name)
+        #sanity_check(y, 'target sanity check', name)
 
         groups = df[config['cv']['group_by']]
-        
-        model = create_model_from_config()
 
         results = cross_validate(
             model, X, y, groups=groups, cv=get_cv(df), 

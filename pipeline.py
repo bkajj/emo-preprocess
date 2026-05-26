@@ -1,33 +1,34 @@
-import os 
-import yaml
-import pandas as pd 
+import os
 import argparse
-from emo_datasets import *
-import warnings;
-from config import *
-from concurrent.futures import ProcessPoolExecutor
-from benchmark import benchmark_datasets
-warnings.filterwarnings('ignore')
 
 parser = argparse.ArgumentParser()
+parser.add_argument('--config', default='configs/sample.yaml')
 parser.add_argument('-s', '--samples', type=int, default=None)
-parser.add_argument('-c', '--config', default=os.path.join(CONFIG_PATH, 'sample.yaml'))
 args = parser.parse_args()
+
+os.environ['PIPELINE_CONFIG_PATH'] = args.config
+
+from config import config, EXTRACTED_PATH
+from emo_datasets import *
+from benchmark import benchmark_datasets
+import pandas as pd 
+import warnings;
+from concurrent.futures import ProcessPoolExecutor
+warnings.filterwarnings('ignore')
+
+DATASETS = {
+    'biraffe': Biraffe,
+    'case': Case,
+    'deap': Deap
+}
 
 def run_dataset(name, window_time, sample_size=None, thread_num=0, max_threads=1):
     dataset = DATASETS[name]()
     return dataset.run(sample_size, thread_num, max_threads, window_time)
 
 if __name__ == '__main__':
-    with open('configs/sample.yaml') as f:
-        config = yaml.safe_load(f)
-        ds_configs = config['datasets']
-
-    os.environ['USE_DATASET_MEMORY'] = '1' if config['cache']['raw_signals'] else '0'
-    os.environ['USE_FEATURE_MEMORY'] = '1' if config['cache']['features'] else '0'
-
     jobs = []
-    for name, cfg in ds_configs.items(): # create list of jobs like (name, thread_num, max_threads)
+    for name, cfg in config['datasets'].items(): # create list of jobs like (name, thread_num, max_threads)
         if cfg['enabled']:
             for thread_num in range(cfg['threads']):
                 jobs.append((name, thread_num, cfg['threads']))
@@ -37,15 +38,15 @@ if __name__ == '__main__':
             executor.submit(
                 run_dataset, 
                 name,
-                ds_configs[name]['window_time'],
+                config['datasets'][name]['window_time'],
                 args.samples, 
                 thread_num, 
                 max_threads
             ): (name, thread_num) for name, thread_num, max_threads in jobs
         }
 
-    results = {name: [] for name, cfg in ds_configs.items() if cfg['enabled']}
-    errors = {name: [] for name, cfg in ds_configs.items() if cfg['enabled']}
+    results = {name: [] for name, cfg in config['datasets'].items() if cfg['enabled']}
+    errors = {name: [] for name, cfg in config['datasets'].items() if cfg['enabled']}
 
     for future in futures:
         name, thread_num = futures[future]

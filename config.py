@@ -1,28 +1,20 @@
 import os
 from joblib import Memory
-from sklearn.ensemble import RandomForestRegressor
-from emo_datasets import Biraffe, Case, Deap
+import yaml
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EXTRACTED_PATH = os.path.join(BASE_DIR, 'extracted')
-CONFIG_PATH = os.path.join(BASE_DIR, 'config')
+CONFIG_PATH = os.environ.get('PIPELINE_CONFIG_PATH', 'configs/sample.yaml')
 
-MODELS = {
-    'random_forest': RandomForestRegressor,
-}
+with open(CONFIG_PATH) as f:
+    config = yaml.safe_load(f)
 
-DATASETS = {
-    'biraffe': Biraffe,
-    'case': Case,
-    'deap': Deap
-}
-
-if os.environ.get('USE_FEATURE_MEMORY') == '1':
+if config['cache']['features']:
     features_memory = Memory(location=os.path.join(BASE_DIR, '.cache/features/'), verbose=0)
 else:
     features_memory = Memory(location=None, verbose=0)
 
-if os.environ.get('USE_DATASET_MEMORY') == '1':
+if config['cache']['raw_signals']:
     raw_dataset_memory = Memory(location=os.path.join(BASE_DIR, '.cache/raw_signal_data/'), verbose=5)
 else:
     raw_dataset_memory = Memory(location=None, verbose=5)

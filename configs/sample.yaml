@@ -20,7 +20,7 @@ model:
 # Preprocessing
 preprocessing:
   normalization: per_subject_zscore  # per_subject_zscore | none | per_stimulus | global
-  nan_handling: drop  # drop | impute_median | impute_zero | indicator
+  nan_handling: drop  # drop | impute_median | impute_zero
   aggregation: window_level  # window_level | per_stimulus_mean | per_stimulus_mean_std
 
 # Datasets
