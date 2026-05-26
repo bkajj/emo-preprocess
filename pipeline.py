@@ -14,14 +14,8 @@ parser.add_argument('-s', '--samples', type=int, default=None)
 parser.add_argument('-c', '--config', default=os.path.join(CONFIG_PATH, 'sample.yaml'))
 args = parser.parse_args()
 
-datasets = {
-    'biraffe': Biraffe,
-    'case': Case,
-    'deap': Deap
-}
-
 def run_dataset(name, window_time, sample_size=None, thread_num=0, max_threads=1):
-    dataset = datasets[name]()
+    dataset = DATASETS[name]()
     return dataset.run(sample_size, thread_num, max_threads, window_time)
 
 if __name__ == '__main__':
@@ -65,7 +59,7 @@ if __name__ == '__main__':
 
     if args.samples is None:
         for name in results:
-            datasets[name]().merge_subjects_to_csv()
+            DATASETS[name]().merge_subjects_to_csv()
 
     benchmark_results = benchmark_datasets(results)
     print(benchmark_results)

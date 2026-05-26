@@ -1,18 +1,28 @@
 from config import *
 import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.model_selection import GroupKFold, cross_validate, cross_val_predict
+from sklearn.model_selection import GroupKFold, cross_validate, cross_val_predict, LeaveOneGroupOut
 from sklearn.metrics import r2_score, mean_absolute_error
+from pipeline import config
 
 pd.set_option('display.max_columns', None)
 pd.set_option('display.width', 200)
 
 def get_cv(df):
-    n_subjects = df['SUBJECT_ID'].nunique()
-    if n_subjects < 2:
-        raise ValueError("Min subject count = 2")
-    n_splits = min(n_subjects, 5)
-    return GroupKFold(n_splits=n_splits)
+    cv_cfg = config['cv']
+    cv_type = cv_cfg['type']
+
+    n_groups = df[cv_cfg['group_by']].nunique()
+    if n_groups < 2:
+        raise ValueError(f"Need at least 2 groups for CV, got {n_groups} for group_by={cv_cfg['group_by']}")
+    
+    if cv_type == 'group_kfold':
+        n_splits = min(n_groups, cv_cfg['n_splits'])
+        return GroupKFold(n_splits=n_splits)
+    elif cv_type == 'leave_one_group_out':
+        return LeaveOneGroupOut()
+    else:
+        raise ValueError(f"Unknown CV type: {cv_type}")
 
 def sanity_check(df, title, dataset_name):
     print(f'{dataset_name}: {title}\n{df.describe()}')
@@ -68,6 +78,12 @@ def correlation_check_avg(processed):
         print("\nStd of correlations (jak bardzo wartości różnią się między badanymi):")
         print(std.round(3))
 
+def create_model_from_config():
+    model_cfg = config['model']
+    model_class = MODELS[model_cfg['type']]
+    return model_class(**model_cfg['params'])
+
+
 def benchmark_datasets(processed):
     #correlation_check(processed)  
     correlation_check_avg(processed)
@@ -86,14 +102,9 @@ def benchmark_datasets(processed):
         sanity_check(X, 'feature sanity check', name)
         sanity_check(y, 'target sanity check', name)
 
-        groups = df['SUBJECT_ID']
+        groups = df[config['cv']['group_by']]
         
-        model = RandomForestRegressor(
-            n_estimators=200,
-            max_depth=4,           
-            min_samples_leaf=30,   
-            random_state=42
-        )
+        model = create_model_from_config()
 
         results = cross_validate(
             model, X, y, groups=groups, cv=get_cv(df), 

@@ -1,9 +1,21 @@
 import os
-from joblib import Memory 
+from joblib import Memory
+from sklearn.ensemble import RandomForestRegressor
+from emo_datasets import Biraffe, Case, Deap
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EXTRACTED_PATH = os.path.join(BASE_DIR, 'extracted')
 CONFIG_PATH = os.path.join(BASE_DIR, 'config')
+
+MODELS = {
+    'random_forest': RandomForestRegressor,
+}
+
+DATASETS = {
+    'biraffe': Biraffe,
+    'case': Case,
+    'deap': Deap
+}
 
 if os.environ.get('USE_FEATURE_MEMORY') == '1':
     features_memory = Memory(location=os.path.join(BASE_DIR, '.cache/features/'), verbose=0)
