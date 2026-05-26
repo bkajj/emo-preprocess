@@ -1,0 +1,48 @@
+name: sample_run
+description: ""
+
+# Global settings
+random_seed: 42
+
+# Cache
+cache:
+  raw_signals: true
+  features: true
+
+# Model
+model: 
+  type: random_forest
+  params:
+    n_estimators: 200
+    max_depth: 4
+    min_samples_leaf: 30
+
+# Preprocessing
+preprocessing:
+  normalization: per_subject_zscore  # per_subject_zscore | none | per_stimulus | global
+  nan_handling: drop  # drop | impute_median | impute_zero | indicator
+  aggregation: window_level  # window_level | per_stimulus_mean | per_stimulus_mean_std
+
+# Datasets
+datasets:
+  biraffe:
+    enabled: true
+    window_time: 6
+    threads: 9
+    skip_subjects: [SUB854, SUB672, SUB200]  # bad signal
+  case:
+    enabled: true
+    window_time: 5
+    threads: 2
+    skip_subjects: []
+  deap:
+    enabled: true
+    window_time: 5
+    threads: 2
+    skip_subjects: []
+
+# Cross-validation
+cv:
+  type: group_kfold
+  n_splits: 5
+  group_by: SUBJECT_ID
