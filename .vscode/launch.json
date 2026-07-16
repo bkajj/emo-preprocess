@@ -2,11 +2,11 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Pipeline -b -c -d -s 5",
+            "name": "Pipeline -s 5",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/pipeline_full.py",
-            "args": ["-b", "-c", "-d", "-s", "5"],
+            "program": "${workspaceFolder}/pipeline.py",
+            "args": [ "-s", "5"],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
             "justMyCode": false

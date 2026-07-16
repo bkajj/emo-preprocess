@@ -11,13 +11,13 @@ def _load_deap_subject(sub_id, path):
 
     annotations = pd.DataFrame(deap['labels'][:, :2], columns=['valence', 'arousal'])
     annotations = annotations.rename(columns={'valence': 'VALENCE', 'arousal': 'AROUSAL'})
-    annotations['video_id'] = range(40)
+    annotations['STIMULI_ID'] = range(40)
     
     dfs = []
     deap_data = deap['data'][:, [36, 38], :]
     for i, video in enumerate(deap_data):
         df = pd.DataFrame(video.T, columns=['EDA', 'BVP'])
-        df['video_id'] = i
+        df['STIMULI_ID'] = i
         dfs.append(df)
 
     deap = pd.concat(dfs, ignore_index=True)
@@ -37,14 +37,14 @@ class Deap(Dataset):
         return _load_deap_subject(sub_id, self.path)
     
     def add_labels(self, combined, data, i, window_size, segment_id):
-        combined['video_id'] = segment_id
+        combined['STIMULI_ID'] = segment_id
         return combined
     
     def get_segments(self, data):
-        return data.groupby('video_id')
+        return data.groupby('STIMULI_ID')
     
     def post_process(self, features, annotations):
-        return pd.merge(features, annotations, on='video_id')
+        return pd.merge(features, annotations, on='STIMULI_ID')
     
     def merge_with_annotations(self, sig, ann):
         return sig

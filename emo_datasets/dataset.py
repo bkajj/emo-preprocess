@@ -102,6 +102,7 @@ class Dataset:
                 if extracted is not None:
                     combined = pd.concat(extracted, axis=1)
                     combined = self.add_labels(combined, segment, i, window_size, segment_id)
+                    combined['STIMULI_ID'] = segment['STIMULI_ID']
                     results.append(combined)
 
         final = pd.concat(results, ignore_index=True) if results else pd.DataFrame()

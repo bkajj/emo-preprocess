@@ -6,10 +6,10 @@ import pandas as pd
 @raw_dataset_memory.cache
 def _load_case_subject(sub_id, path, annotations_path):
     biosigs = pd.read_csv(os.path.join(path, f'{sub_id}.csv'), sep=',')
-    biosigs = biosigs[['daqtime', 'ecg', 'gsr', 'video']].rename(columns={'gsr': 'EDA', 'ecg': 'ECG', 'daqtime':'TIMESTAMP', 'video':'VIDEO_ID'})
+    biosigs = biosigs[['daqtime', 'ecg', 'gsr', 'video']].rename(columns={'gsr': 'EDA', 'ecg': 'ECG', 'daqtime':'TIMESTAMP', 'video':'STIMULI_ID'})
     
     annotations = pd.read_csv(os.path.join(annotations_path, f'{sub_id}.csv'), sep=',')
-    annotations = annotations.rename(columns={'jstime': 'TIMESTAMP', 'valence': 'VALENCE', 'arousal': 'AROUSAL', 'video':'VIDEO_ID'})
+    annotations = annotations.rename(columns={'jstime': 'TIMESTAMP', 'valence': 'VALENCE', 'arousal': 'AROUSAL', 'video':'STIMULI_ID'})
     return biosigs, annotations
 
 class Case(Dataset):
@@ -23,11 +23,11 @@ class Case(Dataset):
         return _load_case_subject(sub_id, self.path, self.annotations_path)
     
     def get_segments(self, data):
-        return data.groupby('VIDEO_ID')
+        return data.groupby('STIMULI_ID')
     
     def merge_with_annotations(self, sig, ann):
-        sig = sig[sig['VIDEO_ID'].isin(range(1, 9))].copy().sort_values('TIMESTAMP')
-        ann = ann[ann['VIDEO_ID'].isin(range(1, 9))].copy().sort_values('TIMESTAMP')
+        sig = sig[sig['STIMULI_ID'].isin(range(1, 9))].copy().sort_values('TIMESTAMP')
+        ann = ann[ann['STIMULI_ID'].isin(range(1, 9))].copy().sort_values('TIMESTAMP')
         result = pd.merge_asof(sig, ann[['TIMESTAMP', 'VALENCE', 'AROUSAL']], on='TIMESTAMP')
         return result
     

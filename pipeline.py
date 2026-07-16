@@ -10,11 +10,14 @@ os.environ['PIPELINE_CONFIG_PATH'] = args.config
 
 from config import config, EXTRACTED_PATH
 from emo_datasets import *
-from benchmark import benchmark_datasets
+from regression import evaluate_model_subject_independent, evaluate_model_subject_dependent
 import pandas as pd 
 import warnings;
 from concurrent.futures import ProcessPoolExecutor
 warnings.filterwarnings('ignore')
+
+pd.set_option('display.max_columns', None)
+pd.set_option('display.width', 200)
 
 DATASETS = {
     'biraffe': Biraffe,
@@ -62,9 +65,15 @@ if __name__ == '__main__':
         for name in results:
             DATASETS[name]().merge_subjects_to_csv()
 
-    benchmark_results = benchmark_datasets(results)
-    print(benchmark_results)
-    benchmark_results.to_csv(os.path.join(EXTRACTED_PATH, 'results.csv'), index=False)
+    results_subject_dependent = evaluate_model_subject_dependent(results)
+    print(results_subject_dependent)
+    
+    results_subject_independent = evaluate_model_subject_independent(results)
+    print(results_subject_independent)
+
+
+    results_subject_dependent.to_csv(os.path.join(EXTRACTED_PATH, 'results_sub_dep.csv'), index=False)
+    results_subject_independent.to_csv(os.path.join(EXTRACTED_PATH, 'results_sub_indep.csv'), index=False)
 
     errors_merged = pd.concat(errors.values(), ignore_index=True)
     errors_merged.to_csv(os.path.join(EXTRACTED_PATH, 'errors.csv'), index=False)
