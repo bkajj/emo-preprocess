@@ -3,7 +3,7 @@ from config import BASE_DIR, raw_dataset_memory
 import os
 import pandas as pd
 
-BIRAFFE_EDA_SCALE = 1
+BIRAFFE_EDA_SCALE = 10000
 
 @raw_dataset_memory.cache
 def _load_biraffe_subject(sub_id, path, annotations_path):
@@ -41,7 +41,7 @@ class Biraffe(Dataset):
             stimuli = ann_part[ann_part['EVENT'].isna() & ann_part['ANS-TIME'].notna()]
             for _, a in stimuli.iterrows():
                 start = a['TIMESTAMP']
-                end = a['TIMESTAMP'] + 12
+                end = a['TIMESTAMP'] + 9 # if 6s => one window (3s gets cut off), if 9s => 9s
                 sig_fragment = sig[(sig['TIMESTAMP'] >= start) & (sig['TIMESTAMP'] < end)].copy()
                 sig_fragment['STIMULI_ID'] = stimuli_id
                 sig_fragment['VALENCE'] = a['VALENCE']
