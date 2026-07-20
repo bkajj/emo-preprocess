@@ -1,4 +1,4 @@
-from config import EXTRACTED_PATH
+from config import RUN_RESULT_PATH
 from preprocess import extract_bvp, extract_ecg, extract_eda, SIGNAL_FEATURES
 import os
 import pandas as pd
@@ -76,8 +76,8 @@ class Dataset:
         window_size = window_time * self.sampling_rate
 
         data = self.merge_with_annotations(data, annotations)
-        output_filename = os.path.join(EXTRACTED_PATH, self.name, f'{subject_id}.csv')
-        output_filename_errors = os.path.join(EXTRACTED_PATH, self.name, f'{subject_id}_errors.csv')
+        output_filename = os.path.join(RUN_RESULT_PATH, self.name, f'{subject_id}.csv')
+        output_filename_errors = os.path.join(RUN_RESULT_PATH, self.name, f'{subject_id}_errors.csv')
 
         results = []
         results_errors = []
@@ -118,7 +118,7 @@ class Dataset:
         return sig
     
     def merge_subjects_to_csv(self):
-        dir = os.path.join(EXTRACTED_PATH, self.name)
+        dir = os.path.join(RUN_RESULT_PATH, self.name)
         files = [
             os.path.join(dir, f) 
             for f in os.listdir(dir) 
@@ -127,5 +127,5 @@ class Dataset:
         dfs = [pd.read_csv(f) for f in files]
         
         result = pd.concat(dfs, ignore_index=True)
-        final_filename = os.path.join(EXTRACTED_PATH, f'{self.name}.csv')
+        final_filename = os.path.join(RUN_RESULT_PATH, f'{self.name}.csv')
         result.to_csv(final_filename, index=False)

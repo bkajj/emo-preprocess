@@ -3,7 +3,7 @@ from config import BASE_DIR, raw_dataset_memory
 import os
 import pandas as pd
 
-BIRAFFE_EDA_SCALE = 1000
+BIRAFFE_EDA_SCALE = 1
 
 @raw_dataset_memory.cache
 def _load_biraffe_subject(sub_id, path, annotations_path):

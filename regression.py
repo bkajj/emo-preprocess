@@ -63,6 +63,7 @@ def evaluate_model_subject_independent(processed):
     preprocessing_cfg = config['preprocessing']
 
     metrics = []
+    feature_analysis = []
     for name, df in processed.items():
 
         if preprocessing_cfg['nan_handling'] == 'drop':
@@ -103,14 +104,17 @@ def evaluate_model_subject_independent(processed):
         corr_v = X.corrwith(y['VALENCE'])
         corr_a = X.corrwith(y['AROUSAL'])
 
-        feature_analysis = pd.DataFrame({
+        fa = pd.DataFrame({
             'corr_v': corr_v,
             'imp_v': feature_importance_valence,
             'corr_a': corr_a,
             'imp_a': feature_importance_arousal,
         })
+        fa_long = fa.reset_index().rename(columns={'index': 'feature'})
+        fa_long.insert(0, 'dataset', name)
+        feature_analysis.append(fa_long)  
         print(f"{name}: feature analysis - subject independent")
-        print(feature_analysis.round(3))
+        print(fa.round(3))
 
         preds = cross_val_predict(model, X, y, groups=groups, cv=cv)
 
@@ -119,11 +123,11 @@ def evaluate_model_subject_independent(processed):
     #sanity_check(X, 'feature sanity check', name)
     #sanity_check(y, 'target sanity check', name)
 
-    return pd.DataFrame(metrics)
+    return pd.DataFrame(metrics), pd.concat(feature_analysis, ignore_index=True)
 
 def evaluate_model_subject_dependent(processed):
-    correlation_check(processed)  
-    correlation_check_avg(processed)
+    #correlation_check(processed)  
+    #correlation_check_avg(processed)
 
     preprocessing_cfg = config['preprocessing']
 
@@ -139,7 +143,6 @@ def evaluate_model_subject_dependent(processed):
 
         metrics_per_fold_in_subject = {}
         metrics_per_subject = {}
-        feature_importances = {}
         df_per_subject = df.groupby('SUBJECT_ID')
         for sub, sub_df in df_per_subject:
 
@@ -160,19 +163,17 @@ def evaluate_model_subject_dependent(processed):
                 scoring=['r2', 'neg_mean_squared_error', 'neg_mean_absolute_error'],
                 return_train_score=True
             )
-            #feature_importances[sub] = model.feature_importances_
 
             # results (predictions) per subject
             preds = cross_val_predict(model, X, y, groups=groups, cv=cv)
 
-            if name == 'case':
-                compare = pd.DataFrame({
-                'true_v': y['VALENCE'].values,
-                'pred_v': preds[:, 0],
-                'true_a': y['AROUSAL'].values,
-                'pred_a': preds[:, 1],
-                })
-                print(f'{sub}:\n{compare.describe()}')
+            #compare = pd.DataFrame({
+            #    'true_v': y['VALENCE'].values,
+            #    'pred_v': preds[:, 0],
+            #    'true_a': y['AROUSAL'].values,
+            #    'pred_a': preds[:, 1],
+            #    })
+            #print(f'{sub}:\n{compare.describe()}')
 
             # calculate average metrics per fold, diagnostic useful for overfitting detection (train_r2 vs test_r2)
             metrics_per_fold_in_subject[sub] = avg_metrics_per_fold(sub_result)
@@ -180,18 +181,7 @@ def evaluate_model_subject_dependent(processed):
             # calculate average metrics for whole subject
             metrics_per_subject[sub] = avg_metrics_per_subject(preds, y)
 
-        # feature_importances_df = pd.DataFrame.from_dict(feature_importances, orient='index')
-        # feature_importances_stats = feature_importances_df.describe()
-        # print(f"{name}: feature importance - subject dependent")
-        # print(feature_importances_stats)
-        # print(feature_importances_df)
-
         metrics_per_subject_df = pd.DataFrame.from_dict(metrics_per_subject, orient='index')
-        print(f"{name}: rozklad metryk")
-        print(f"Ile badanych r2 >0: {(metrics_per_subject_df > 0).sum()}")
-        print(metrics_per_subject_df.describe())
-        print(metrics_per_subject_df.sort_values('r2_global_a'))
-        
         metrics_per_subject_avg = metrics_per_subject_df.mean()
         
         metrics_per_fold_subject_df = pd.DataFrame.from_dict(metrics_per_fold_in_subject, orient='index')
@@ -202,4 +192,4 @@ def evaluate_model_subject_dependent(processed):
     #sanity_check(X, 'feature sanity check', name)
     #sanity_check(y, 'target sanity check', name)
 
-    return pd.DataFrame(metrics)
+    return pd.DataFrame(metrics).T

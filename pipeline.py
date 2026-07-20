@@ -8,11 +8,12 @@ args = parser.parse_args()
 
 os.environ['PIPELINE_CONFIG_PATH'] = args.config
 
-from config import config, EXTRACTED_PATH
+from config import config, RUN_RESULT_PATH
 from emo_datasets import *
 from regression import evaluate_model_subject_independent, evaluate_model_subject_dependent
 import pandas as pd 
-import warnings;
+import warnings
+import shutil
 from concurrent.futures import ProcessPoolExecutor
 warnings.filterwarnings('ignore')
 
@@ -65,15 +66,18 @@ if __name__ == '__main__':
         for name in results:
             DATASETS[name]().merge_subjects_to_csv()
 
-    results_subject_dependent = evaluate_model_subject_dependent(results)
-    print(results_subject_dependent)
-    
-    results_subject_independent = evaluate_model_subject_independent(results)
-    print(results_subject_independent)
+    metrics_sub_dep = evaluate_model_subject_dependent(results)
+    print("SUBJECT DEPENDENT - RESULTS")
+    print(metrics_sub_dep)
 
+    metrics_sub_indep, fa_sub_indep = evaluate_model_subject_independent(results)
+    print("SUBJECT INDEPENDENT - RESULTS")
+    print(metrics_sub_indep)
+    print(fa_sub_indep)
 
-    results_subject_dependent.to_csv(os.path.join(EXTRACTED_PATH, 'results_sub_dep.csv'), index=False)
-    results_subject_independent.to_csv(os.path.join(EXTRACTED_PATH, 'results_sub_indep.csv'), index=False)
+    metrics_sub_dep.to_csv(os.path.join(RUN_RESULT_PATH, 'results_sub_dep.csv'), index=False)
+    metrics_sub_indep.to_csv(os.path.join(RUN_RESULT_PATH, 'results_sub_indep.csv'), index=False)
+    fa_sub_indep.to_csv(os.path.join(RUN_RESULT_PATH, 'feature_analysis_sub_indep.csv'), index=True)
 
     errors_merged = pd.concat(errors.values(), ignore_index=True)
-    errors_merged.to_csv(os.path.join(EXTRACTED_PATH, 'errors.csv'), index=False)
+    errors_merged.to_csv(os.path.join(RUN_RESULT_PATH, 'errors.csv'), index=False)
