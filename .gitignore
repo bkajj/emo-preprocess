@@ -1,4 +1,10 @@
 __pycache__/
 .venv/
 .cache/
+logs/*
 test.py
+biraffe_signal_coverage.py
+biraffe_signal_coverage.csv
+nan_report.py
+hrv_graph.pdf
+.csv

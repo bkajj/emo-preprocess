@@ -1,4 +1,4 @@
-name: baseline
+name: 5s
 description: ""
 
 # Cache
@@ -39,17 +39,17 @@ preprocessing:
 datasets:
   biraffe:
     enabled: true
-    window_time: 6
-    threads: 13
+    window_time: 9
+    threads: 9
     skip_subjects: ['SUB314', 'SUB356', 'SUB553', 'SUB555', 'SUB668', 'SUB821', 'SUB431', 'SUB603']
   case:
     enabled: true
-    window_time: 10
+    window_time: 20
     threads: 2
     skip_subjects: []
   deap:
     enabled: true
-    window_time: 60
+    window_time: 30
     threads: 2
     skip_subjects: []
 

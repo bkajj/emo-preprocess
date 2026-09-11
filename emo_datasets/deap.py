@@ -17,6 +17,7 @@ def _load_deap_subject(sub_id, path):
     deap_data = deap['data'][:, [36, 38], :]
     for i, video in enumerate(deap_data):
         df = pd.DataFrame(video.T, columns=['EDA', 'BVP'])
+        df['EDA'] = -df['EDA'] # preprocessed dataset EDA is resistance, change sign to get conductivity
         df['STIMULI_ID'] = i
         dfs.append(df)
 

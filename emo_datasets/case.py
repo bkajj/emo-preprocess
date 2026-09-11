@@ -26,8 +26,8 @@ class Case(Dataset):
         return data.groupby('STIMULI_ID')
     
     def merge_with_annotations(self, sig, ann):
-        sig = sig[sig['STIMULI_ID'].isin(range(1, 9))].copy().sort_values('TIMESTAMP')
-        ann = ann[ann['STIMULI_ID'].isin(range(1, 9))].copy().sort_values('TIMESTAMP')
+        sig = sig[sig['STIMULI_ID'].isin(range(1, 9))].copy().sort_values('TIMESTAMP') # isin excludes startvid (10), bluescreen(11)
+        ann = ann[ann['STIMULI_ID'].isin(range(1, 9))].copy().sort_values('TIMESTAMP') # and endvid (12) 
         result = pd.merge_asof(sig, ann[['TIMESTAMP', 'VALENCE', 'AROUSAL']], on='TIMESTAMP')
         return result
     

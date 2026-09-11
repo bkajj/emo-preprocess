@@ -32,10 +32,18 @@ class Biraffe(Dataset):
         for p in parts:
             start_str = f'STIMULI PART {p} START'
             end_str = f'STIMULI PART {p} END'
-            ann_start_idx = ann[ann['EVENT'] == start_str].index[0] + 1
-            ann_end_idx = ann[ann['EVENT'] == end_str].index[0]
-            ts_start = ann.loc[ann_start_idx]['TIMESTAMP']
-            ts_end = ann.loc[ann_end_idx]['TIMESTAMP']
+            start_rows = ann[ann['EVENT'] == start_str]
+            end_rows = ann[ann['EVENT'] == end_str]
+
+            if len(start_rows) == 0:
+                continue
+
+            if len(end_rows):
+                ts_end = ann.loc[end_rows.index[0], 'TIMESTAMP']
+            else:
+                ts_end = ann['TIMESTAMP'].max() + 1
+
+            ts_start = ann.loc[start_rows.index[0] + 1]['TIMESTAMP']
             
             ann_part = ann[(ann['TIMESTAMP'] >= ts_start) & (ann['TIMESTAMP'] < ts_end)]
             stimuli = ann_part[ann_part['EVENT'].isna() & ann_part['ANS-TIME'].notna()]
@@ -43,6 +51,8 @@ class Biraffe(Dataset):
                 start = a['TIMESTAMP']
                 end = a['TIMESTAMP'] + 9 # if 6s => one window (3s gets cut off), if 9s => 9s
                 sig_fragment = sig[(sig['TIMESTAMP'] >= start) & (sig['TIMESTAMP'] < end)].copy()
+                if len(sig_fragment) == 0:
+                    continue
                 sig_fragment['STIMULI_ID'] = stimuli_id
                 sig_fragment['VALENCE'] = a['VALENCE']
                 sig_fragment['AROUSAL'] = a['AROUSAL']

@@ -6,16 +6,16 @@ warnings.filterwarnings('ignore')
 from config import *
 
 SIGNAL_FEATURES = {
-    'ECG': ['ECG_Rate_Mean', 'HRV_MeanNN', 'HRV_SDNN', 'HRV_RMSSD'],
+    'ECG': ['ECG_Rate_Mean', 'HRV_MeanNN'],
     'EDA': ['SCR_Peaks_N', 'SCR_Peaks_Amplitude_Mean', 'EDA_Tonic_SD'],
-    'BVP': ['PPG_Rate_Mean', 'HRV_MeanNN', 'HRV_SDNN', 'HRV_RMSSD'],
+    'BVP': ['PPG_Rate_Mean', 'HRV_MeanNN'],
 }
 
 @features_memory.cache
 def extract_bvp_fragment(bvp, sampling_rate):
     bvp, info = nk.ppg_process(bvp, sampling_rate=sampling_rate)
     bvp = nk.ppg_analyze(bvp, method="interval-related", sampling_rate=sampling_rate)
-    bvp = bvp[['PPG_Rate_Mean', 'HRV_MeanNN', 'HRV_SDNN', 'HRV_RMSSD']]
+    bvp = bvp[['PPG_Rate_Mean', 'HRV_MeanNN']]
     bvp = bvp.map(lambda x: x[0][0] if isinstance(x, np.ndarray) else x)
     return bvp
 
@@ -27,7 +27,7 @@ def extract_bvp(data, i, window_size, sampling_rate):
 def extract_ecg_fragment(ecg, sampling_rate):
     ecg, info = nk.ecg_process(ecg, sampling_rate=sampling_rate)
     ecg = nk.ecg_analyze(ecg, method="interval-related", sampling_rate=sampling_rate)
-    ecg = ecg[['ECG_Rate_Mean', 'HRV_MeanNN', 'HRV_SDNN', 'HRV_RMSSD']]
+    ecg = ecg[['ECG_Rate_Mean', 'HRV_MeanNN']]
     ecg = ecg.map(lambda x: x[0][0] if isinstance(x, np.ndarray) else x)
     return ecg
 

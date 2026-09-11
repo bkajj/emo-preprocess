@@ -3,7 +3,7 @@ from preprocess import extract_bvp, extract_ecg, extract_eda, SIGNAL_FEATURES
 import os
 import pandas as pd
 import numpy as np
-
+from config import config
 ERROR_COLUMNS = ['dataset', 'subject_id', 'segment_id', 'window_start', 'signal', 'error_type', 'error_msg']
 
 class Dataset:
@@ -20,11 +20,15 @@ class Dataset:
         filenames = sorted(f for f in os.listdir(self.path) if f.endswith(self.fileformat))
         subjects = [f.split(self.splitchar)[0] for f in filenames]
 
+        skipped = config['datasets'][str.lower(self.name)].get('skip_subjects', [])
+        subjects = [s for s in subjects if s not in skipped]
+
         if sample_size is not None:
             subjects = subjects[:sample_size]
 
         results = []
         errors = []
+        failed_subs = []
 
         subjects_for_thread = subjects[thread_num::max_threads]
         for s in subjects_for_thread:
@@ -36,12 +40,13 @@ class Dataset:
                 errors.append(subject_error)
             except Exception as e:
                 print(f'[{self.name}] FAILED subject {s}: {type(e).__name__}: {e}', flush=True)
+                failed_subs.append(s)
                 continue
 
         results = pd.concat(results, ignore_index=True) if results else pd.DataFrame()
         errors = pd.concat(errors, ignore_index=True) if errors else pd.DataFrame(columns=ERROR_COLUMNS)
             
-        return results, errors
+        return results, errors, failed_subs
     
     def load_subject(self, subject_id, cache=False):
         pass
@@ -102,7 +107,7 @@ class Dataset:
                 if extracted is not None:
                     combined = pd.concat(extracted, axis=1)
                     combined = self.add_labels(combined, segment, i, window_size, segment_id)
-                    combined['STIMULI_ID'] = segment['STIMULI_ID']
+                    combined['STIMULI_ID'] = segment_id
                     results.append(combined)
 
         final = pd.concat(results, ignore_index=True) if results else pd.DataFrame()
@@ -124,6 +129,11 @@ class Dataset:
             for f in os.listdir(dir) 
             if not f.endswith('_errors.csv')
         ]
+
+        if not files:
+            print(f'[{self.name}] merge pominięty: brak plików w {dir}', flush=True)
+            return
+
         dfs = [pd.read_csv(f) for f in files]
         
         result = pd.concat(dfs, ignore_index=True)

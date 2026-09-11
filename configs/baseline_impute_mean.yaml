@@ -1,4 +1,4 @@
-name: baseline
+name: baseline_impute_mean
 description: ""
 
 # Cache
@@ -29,7 +29,7 @@ model:
 
 # Preprocessing
 preprocessing:
-  nan_handling: impute_median  # drop | impute_median | impute_mean
+  nan_handling: impute_mean  # drop | impute_median | impute_mean
   subject_independent:
     normalization: per_subject_zscore  # per_subject_zscore | none 
   subject_dependent:
@@ -40,7 +40,7 @@ datasets:
   biraffe:
     enabled: true
     window_time: 6
-    threads: 13
+    threads: 9
     skip_subjects: ['SUB314', 'SUB356', 'SUB553', 'SUB555', 'SUB668', 'SUB821', 'SUB431', 'SUB603']
   case:
     enabled: true

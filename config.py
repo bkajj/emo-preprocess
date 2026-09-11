@@ -12,7 +12,11 @@ CONFIG_PATH = os.environ.get('PIPELINE_CONFIG_PATH', 'configs/sample.yaml')
 with open(CONFIG_PATH) as f:
     config = yaml.safe_load(f)
 
-RUN_DIR_NAME = f"{datetime.now().strftime('%y-%m-%d_%H%M')}_{config['name']}" #date_time_namefromYAML
+run_id = os.environ.get('PIPELINE_RUN_ID')
+if run_id is None:
+    run_id = datetime.now().strftime('%y-%m-%d_%H%M')
+
+RUN_DIR_NAME = f"{run_id}_{config['name']}" #date_time_namefromYAML
 RUN_RESULT_PATH = os.path.join(RESULTS_PATH, RUN_DIR_NAME)
 
 os.makedirs(os.path.join(RUN_RESULT_PATH, 'BIRAFFE'), exist_ok=True)

@@ -28,8 +28,8 @@ def normalize_per_subject(df, feature_cols):
 def make_imputer(strategy):
     if strategy == 'impute_median':
         return SimpleImputer(strategy='median')
-    elif strategy == 'impute_zero':
-        return SimpleImputer(strategy='constant', fill_value=0)
+    elif strategy == 'impute_mean':
+        return SimpleImputer(strategy='mean')
     
 def sanity_check(df, title, dataset_name):
     print(f'{dataset_name}: {title}\n{df.describe()}')
