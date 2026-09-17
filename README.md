@@ -5,7 +5,7 @@ My master's thesis on the impact of sensor data preprocessing methods on emotion
 ## Motivation
 Most affective computing papers treat preprocessing as an implementation detail and often describe it only briefly. Models are usually trained on a single dataset, which makes results difficult to compare across datasets. This work reverses that perspective and treats preprocessing as the main object of study, using a fixed model as the measuring tool.
 
-## What it does
+## Overview
 The project unifies three datasets into a single pipeline comparing four main preprocessing decisions: 
 - feature selection
 - window size
