@@ -1,7 +1,7 @@
 Set-Location $PSScriptRoot
 
 $configs = @(
-  "configs\baseline.yaml",
+  "configs\gradient_boosting.yaml"
 )
 
 New-Item -ItemType Directory -Force -Path logs | Out-Null
