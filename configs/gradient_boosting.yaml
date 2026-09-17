@@ -1,0 +1,66 @@
+name: gradient_boosting
+description: ""
+
+# Cache
+cache:
+  raw_signals: true
+  features: true
+
+# Model
+model:
+  subject_dependent:
+    type: gradient_boosting
+    params:
+      max_iter: 300
+      learning_rate: 0.05
+      max_depth: 3
+      min_samples_leaf: 5
+      early_stopping: false
+      random_state: 42
+
+  subject_independent:
+    type: gradient_boosting
+    params:
+      max_iter: 500
+      learning_rate: 0.05
+      max_depth: 3
+      min_samples_leaf: 20
+      early_stopping: true
+      validation_fraction: 0.1
+      n_iter_no_change: 20
+      random_state: 42
+  
+
+# Preprocessing
+preprocessing:
+  nan_handling: impute_median  # drop | impute_median | impute_mean
+  subject_independent:
+    normalization: per_subject_zscore  # per_subject_zscore | none 
+  subject_dependent:
+    normalization: none # ONLY none
+
+# Datasets
+datasets:
+  biraffe:
+    enabled: true
+    window_time: 6
+    threads: 13
+    skip_subjects: ['SUB314', 'SUB356', 'SUB553', 'SUB555', 'SUB668', 'SUB821', 'SUB431', 'SUB603']
+  case:
+    enabled: true
+    window_time: 10
+    threads: 2
+    skip_subjects: []
+  deap:
+    enabled: true
+    window_time: 60
+    threads: 2
+    skip_subjects: []
+
+# Cross-validation
+cv:
+  subject_dependent:
+    type: group_kfold
+    n_splits: 5
+  subject_independent:
+    type: leave_one_group_out

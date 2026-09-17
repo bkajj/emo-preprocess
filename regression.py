@@ -3,20 +3,30 @@ from common import make_imputer, normalize_per_subject, get_cv
 from eda import correlation_check, correlation_check_avg
 import pandas as pd
 import numpy as np
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import RandomForestRegressor, HistGradientBoostingRegressor
+from sklearn.linear_model import Ridge
 from sklearn.pipeline import Pipeline
+from sklearn.multioutput import MultiOutputRegressor
+from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import cross_validate, cross_val_predict
 from sklearn.metrics import r2_score, mean_absolute_error
 from sklearn.base import clone
 
 MODELS = {
     'random_forest': RandomForestRegressor,
+    'gradient_boosting': HistGradientBoostingRegressor,
+    'ridge_regression': Ridge
 }
 
 def create_model_from_config(variant):
     model_cfg = config['model'][variant]
     model_class = MODELS[model_cfg['type']]
-    return model_class(**model_cfg['params'])
+    model = model_class(**model_cfg['params'])
+   
+    if model_cfg['type'] == 'gradient_boosting':
+        model = MultiOutputRegressor(model)
+
+    return model
 
 def avg_metrics_per_fold(result):
     return {
@@ -56,6 +66,17 @@ def measure_model_indep(y, preds, results, metrics, name):
     
     return metrics
 
+def build_pipeline(validation_type):
+    steps = []
+    if config['preprocessing']['nan_handling'] != 'drop':
+        imputer = make_imputer(config['preprocessing']['nan_handling'])
+        steps.append(('imputer', imputer))
+    if config['model'][validation_type]['type'] == 'ridge_regression':
+        steps.append(('scaler', StandardScaler()))
+
+    steps.append(('regressor', create_model_from_config(validation_type)))
+    return Pipeline(steps)
+
 def evaluate_model_subject_independent(processed):
     #correlation_check(processed)  
     #correlation_check_avg(processed)
@@ -65,13 +86,9 @@ def evaluate_model_subject_independent(processed):
     metrics = []
     feature_analysis = []
     for name, df in processed.items():
-
         if preprocessing_cfg['nan_handling'] == 'drop':
             df = df.dropna().reset_index(drop=True)
-            model = Pipeline([('regressor', create_model_from_config('subject_independent'))])
-        else:
-            imputer = make_imputer(preprocessing_cfg['nan_handling'])
-            model = Pipeline([('imputer', imputer), ('regressor', create_model_from_config('subject_independent'))])
+        model = build_pipeline('subject_independent')
 
         # no leakage, because we normalize per subject and cv splits also by subjects
         X = df.drop(columns=['AROUSAL', 'VALENCE', 'STIMULI_ID'])
@@ -91,30 +108,31 @@ def evaluate_model_subject_independent(processed):
         )
 
         ##### feature importance
-        model_v = clone(model)
-        model_v.fit(X, y['VALENCE'])
-        fi_v = model_v.named_steps['regressor'].feature_importances_
-        feature_importance_valence = pd.Series(fi_v, index=X.columns)
+        if config['model']['subject_independent']['type'] == 'random_forest':
+            model_v = clone(model)
+            model_v.fit(X, y['VALENCE'])
+            fi_v = model_v.named_steps['regressor'].feature_importances_
+            feature_importance_valence = pd.Series(fi_v, index=X.columns)
 
-        model_a = clone(model)
-        model_a.fit(X, y['AROUSAL'])
-        fi_a = model_a.named_steps['regressor'].feature_importances_
-        feature_importance_arousal = pd.Series(fi_a, index=X.columns)
+            model_a = clone(model)
+            model_a.fit(X, y['AROUSAL'])
+            fi_a = model_a.named_steps['regressor'].feature_importances_
+            feature_importance_arousal = pd.Series(fi_a, index=X.columns)
 
-        corr_v = X.corrwith(y['VALENCE'])
-        corr_a = X.corrwith(y['AROUSAL'])
+            corr_v = X.corrwith(y['VALENCE'])
+            corr_a = X.corrwith(y['AROUSAL'])
 
-        fa = pd.DataFrame({
-            'corr_v': corr_v,
-            'imp_v': feature_importance_valence,
-            'corr_a': corr_a,
-            'imp_a': feature_importance_arousal,
-        })
-        fa_long = fa.reset_index().rename(columns={'index': 'feature'})
-        fa_long.insert(0, 'dataset', name)
-        feature_analysis.append(fa_long)  
-        print(f"{name}: feature analysis - subject independent")
-        print(fa.round(3))
+            fa = pd.DataFrame({
+                'corr_v': corr_v,
+                'imp_v': feature_importance_valence,
+                'corr_a': corr_a,
+                'imp_a': feature_importance_arousal,
+            })
+            fa_long = fa.reset_index().rename(columns={'index': 'feature'})
+            fa_long.insert(0, 'dataset', name)
+            feature_analysis.append(fa_long)  
+            print(f"{name}: feature analysis - subject independent")
+            print(fa.round(3))
 
         preds = cross_val_predict(model, X, y, groups=groups, cv=cv)
 
@@ -123,7 +141,8 @@ def evaluate_model_subject_independent(processed):
     #sanity_check(X, 'feature sanity check', name)
     #sanity_check(y, 'target sanity check', name)
 
-    return pd.DataFrame(metrics), pd.concat(feature_analysis, ignore_index=True)
+    fa_df = pd.concat(feature_analysis, ignore_index=True) if feature_analysis else pd.DataFrame()
+    return pd.DataFrame(metrics), fa_df
 
 def evaluate_model_subject_dependent(processed):
     #correlation_check(processed)  
@@ -136,10 +155,7 @@ def evaluate_model_subject_dependent(processed):
 
         if preprocessing_cfg['nan_handling'] == 'drop':
             df = df.dropna().reset_index(drop=True)
-            model = Pipeline([('regressor', create_model_from_config('subject_dependent'))])
-        else:
-            imputer = make_imputer(preprocessing_cfg['nan_handling'])
-            model = Pipeline([('imputer', imputer), ('regressor', create_model_from_config('subject_dependent'))])
+        model = build_pipeline('subject_dependent')
 
         metrics_per_fold_in_subject = {}
         metrics_per_subject = {}
