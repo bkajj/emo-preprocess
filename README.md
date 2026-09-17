@@ -67,10 +67,10 @@ pip install -r requirements.txt
 ## Usage
 
 Each experiment is defined by a YAML configuration file in `configs/`.
-A run is started by passing the configuration name to the pipeline:
+A run is started by passing the configuration path to the pipeline:
 
 ```powershell
-python pipeline.py --config baseline
+python pipeline.py --config configs/baseline.yaml
 ```
 
 `baseline.yaml` is the reference configuration used throughout the thesis and

@@ -2,7 +2,7 @@ import os
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--config', default='configs/sample.yaml')
+parser.add_argument('--config', default='configs/baseline.yaml')
 parser.add_argument('-s', '--samples', type=int, default=None)
 args = parser.parse_args()
 

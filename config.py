@@ -7,7 +7,7 @@ import shutil
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EXTRACTED_PATH = os.path.join(BASE_DIR, 'extracted')
 RESULTS_PATH = os.path.join(BASE_DIR, 'results')
-CONFIG_PATH = os.environ.get('PIPELINE_CONFIG_PATH', 'configs/sample.yaml')
+CONFIG_PATH = os.environ.get('PIPELINE_CONFIG_PATH', 'configs/baseline.yaml')
 
 with open(CONFIG_PATH) as f:
     config = yaml.safe_load(f)
