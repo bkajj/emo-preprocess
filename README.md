@@ -91,7 +91,7 @@ documents all available options. The remaining files change one element at a tim
 ## Output
 
 Each run writes to a timestamped directory under `results/`, containing the
-metrics for both validation modes, per-dataset feature tables, and a log file.
+metrics for both validation modes, per-dataset feature tables, and a copy of the configuration used.
 Extracted features and preprocessed signals are cached between runs, so
 repeated experiments reuse them instead of recomputing.
 
