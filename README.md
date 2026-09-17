@@ -52,8 +52,7 @@ src/
 └── requirements.txt
 ```
 
-Additional scripts (`eda.py`, `feature_stats.py`, `nan_report.py`, `HRV_graphs.py`)
-were used for data inspection and generating figures.
+Additional scripts were used for data inspection and generating figures.
 
 ## Setup
 
